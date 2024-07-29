@@ -8,6 +8,13 @@
  Text Domain:       logobot-wp
  */
 
+if (!defined('ABSPATH')) {
+    exit; // Exit if accessed directly.
+}
+
+require_once __DIR__ . '/vendor/autoload.php';
+use Logotel\LogobotWp\Helper\LogobotHelper;
+
 function logobot_wp_setup() {
 
     register_activation_hook(__FILE__, 'logobot_wp_activate');
@@ -35,32 +42,51 @@ function logobot_wp_init_plugin() {
     // registro i blocchi solo se il plugin è stato esplicitamente attivato dall'utente
     logobot_wp_register_block();
 
-    /*
+    
     if (get_option('logobot_wp_is_active') == 1) {
 
-         // inizializzo il chatbot solo se non è mai stato fatto in precedenza
-        if (get_option('logobot_wp_is_initialized') == 0) {
-            logobot_wp_init_bot();
-        }
+        logobot_wp_init_bot();
+        // inizializzo il chatbot solo se non è mai stato fatto in precedenza
+        // if (get_option('logobot_wp_is_initialized') == 0) {
+        //     logobot_wp_init_bot();
+        // }
     }
-    */
 }
 
 function logobot_wp_init_bot() {
+
     //TODO
 }
 
 function logobot_wp_render_block($attributes) {
+    $private_key = get_option( 'logobot_wp_private_key');
+    $license_key = get_option( 'logobot_wp_license_key');
     $client_url = get_option( 'logobot_wp_client_url');
+    $bot_name = get_option( 'logobot_wp_bot_name');
     $logobotWrapperId = isset($attributes['wrapperId']) ? $attributes['wrapperId'] : 'logobot-wrapper';
+
+    $jwt = 'todo'; //LogobotHelper::generateJWT($private_key, $license_key);
     
     ob_start(); // Avvia la cattura dell’output
     ?>
-        <div id="<?php echo esc_attr($logobotWrapperId); ?>">CHATBOT</div>
+        <div>
+            <dl>
+                <dt>PRIVATE KEY: </dt><dd><?php echo esc_attr($private_key); ?></dd>
+                <dt>LICENSE KEY: </dt><dd><?php echo esc_attr($license_key); ?></dd>
+                <dt>JWT: </dt><dd><?php echo esc_attr($jwt); ?></dd>
+            </dl>
+        </div>
+        <div id="<?php echo esc_attr($logobotWrapperId); ?>"></div>
         <script type="module" crossorigin src="<?php echo esc_attr($client_url); ?>/chatbot.js" onload="initLogobot()"></script>
         <script>
             function initLogobot() {
-                //TODO
+                // Logobot.init({
+                //     targetDiv: '<?php echo esc_attr($logobotWrapperId); ?>',
+                //     userJwt: 'my-userjwt-token',
+                //     licenseKey: 'my-license-key-for-openai',
+                //     bot: '<?php echo esc_attr($bot_name); ?>',
+                //     name: 'Visitatore'
+                // });
             }
         </script>
     <?php
@@ -95,6 +121,7 @@ function logobot_wp_add_menu_page() {
 }
 
 function logobot_wp_register_plugin_settings() {
+    register_setting( 'logobot_wp_plugin_settings_group', 'logobot_wp_private_key' );
     register_setting( 'logobot_wp_plugin_settings_group', 'logobot_wp_license_key' );
     register_setting( 'logobot_wp_plugin_settings_group', 'logobot_wp_is_active', 'logobot_wp_is_active_sanitizer');
     register_setting( 'logobot_wp_plugin_settings_group', 'logobot_wp_bot_name', 'logobot_wp_bot_name_sanitizer' );
@@ -121,6 +148,12 @@ function logobot_wp_load_settings_page() {
                 <?php settings_fields( 'logobot_wp_plugin_settings_group' ); ?>
                 <?php do_settings_sections( 'logobot_wp_plugin_settings_group' ); ?>
                 <table class="form-table">
+                    <tr valign="top">
+                        <th scope="row">Private Key*</th>
+                        <td>
+                            <input required type="text" name="logobot_wp_private_key" value="<?php echo esc_attr( get_option('logobot_wp_private_key') ); ?>" />
+                        </td>
+                    </tr>
                     <tr valign="top">
                         <th scope="row">License Key*</th>
                         <td>

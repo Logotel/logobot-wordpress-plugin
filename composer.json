@@ -1,0 +1,19 @@
+{
+    "name": "logotel/logobot-wp",
+    "description": "The Logobot wordpress plugin",
+    "type": "wordpress-plugin",
+    "autoload": {
+        "psr-4": {
+            "Logotel\\LogobotWp\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Riccardo De Silva",
+            "email": "r.desilva@logotel.it"
+        }
+    ],
+    "require": {
+        "logotel/logobot-php-integration": "^1.10"
+    }
+}
