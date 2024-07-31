@@ -8,65 +8,42 @@
  Text Domain:       logobot-wp
  */
 
-
-
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly.
 }
 
 require_once __DIR__ . '/vendor/autoload.php';
 use Logotel\LogobotWp\Helper\LogobotHelper;
-logobot_wp_setup();
+logobot_wp_start();
 
-function logobot_wp_setup() {
+function logobot_wp_start() {
 
     register_activation_hook(__FILE__, 'logobot_wp_activate');
 
-    //call register settings function
+    // register plugin settings
 	add_action( 'admin_init', 'logobot_wp_register_plugin_settings' );
 
-    // aggiungo la voce di menu della pagina di configurazione del plugin
+    // add admin menu item to settings page
     add_action('admin_menu', 'logobot_wp_add_menu_page');
 
-    add_action( 'enqueue_block_editor_assets', 'logobot_wp_enqueue_block_editor_assets' );
-
-    //call init function
-    add_action('init', 'logobot_wp_init_plugin');
+    
+    if (get_option('logobot_wp_is_active',0) == '1') {
+        add_action( 'enqueue_block_editor_assets', 'logobot_wp_enqueue_block_editor_assets' );
+        add_action('init', 'logobot_wp_init_plugin');
+    }
 }
 
 function logobot_wp_activate() {
     add_option('logobot_wp_is_active', '0');
-    add_option('logobot_wp_is_initialized', '0');
     add_option('logobot_wp_bot_name', 'Logobot');
 }
 
-function logobot_wp_start_session() {
+function logobot_wp_init_plugin() {
     if (!session_id()) {
         session_start();
     }
-}
-
-function logobot_wp_init_plugin() {
-
-    logobot_wp_start_session();
-
-    // registro i blocchi solo se il plugin è stato esplicitamente attivato dall'utente
     logobot_wp_register_block();
-
-    
-    // if (get_option('logobot_wp_is_active') == 1) {
-
-    //     logobot_wp_init_bot();
-    //     // inizializzo il chatbot solo se non è mai stato fatto in precedenza
-    //     // if (get_option('logobot_wp_is_initialized') == 0) {
-    //     //     logobot_wp_init_bot();
-    //     // }
-    // }
 }
-
-// function logobot_wp_init_bot() {
-//     //TODO
-// }
 
 function logobot_wp_get_upload_dir() {
     $upload_dir = wp_upload_dir();
