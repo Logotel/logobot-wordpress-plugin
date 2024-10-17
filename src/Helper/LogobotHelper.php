@@ -11,13 +11,13 @@ class LogobotHelper {
             $jwt = Manager::jwt()
             ->setKeyFromFile($private_key_path)
             ->setLicense($license)
-            ->setEmail($sessionId . '@logotel.it')
+            ->setEmail($sessionId . '@logotel.invalid')
             ->setIdentifier($sessionId)
             ->setPermissions(['public'])
             ->generate();
             return $jwt;
         } catch (Exception $e) {
-            return '';
+            return $e;
         }
         
     }
