@@ -84,7 +84,10 @@ function logobot_wp_render_block($attributes) {
     $bot_name = get_option( LOGOBOT_WP_BOT_NAME);
     $logobotWrapperId = isset($attributes['wrapperId']) ? $attributes['wrapperId'] : 'logobot-wrapper';
     $jwt = LogobotHelper::generateJWT($private_key_path,$license_key, $sessionId);
-    
+    wp_enqueue_style(
+        'logobot-block-style',
+        $client_url . '/styles.css'
+    );
     ob_start();
     ?>
         <?php if ($jwt instanceof Exception) : ?>
