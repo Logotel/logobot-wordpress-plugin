@@ -20,6 +20,7 @@ define('LOGOBOT_WP_LICENSE_KEY', 'logobot_wp_license_key');
 define('LOGOBOT_WP_CLIENT_URL', 'logobot_wp_client_url');
 define('LOGOBOT_WP_PLUGIN_SETTINGS_GROUP', 'logobot_wp_plugin_settings_group');
 define('LOGOBOT_WP_DOMAIN', 'logobot-wp');
+define('LOGOBOT_WP_BLOCK_TYPE', 'logobot-wp/logobot-block');
 logobot_wp_start();
 
 function logobot_wp_start() {
@@ -84,43 +85,45 @@ function logobot_wp_render_block($attributes) {
     $bot_name = get_option( LOGOBOT_WP_BOT_NAME);
     $logobotWrapperId = isset($attributes['wrapperId']) ? $attributes['wrapperId'] : 'logobot-wrapper';
     $jwt = LogobotHelper::generateJWT($private_key_path,$license_key, $sessionId);
-
-    if (empty($jwt)) {
-        return;
-    }
-    
     ob_start();
     ?>
-        <div class="logobot-wrapper" id="<?php echo esc_attr($logobotWrapperId); ?>" ></div>
-        <script type="module" crossorigin src="<?php echo esc_attr($client_url); ?>/chatbot.js" onload="initLogobot()"></script>
-        <script>
-            function initLogobot() {
+        <?php if ($jwt instanceof Exception) : ?>
+            <pre><?php echo $jwt->getCode() . ": " .  $jwt->getMessage(); ?></pre>
+        <?php else: ?>
+            <div class="logobot-wrapper" id="<?php echo esc_attr($logobotWrapperId); ?>" ></div>
+            <script type="module" crossorigin src="<?php echo esc_attr($client_url); ?>/chatbot.js" onload="initLogobot()"></script>
+            <script>
+                function initLogobot() {
 
-                const config = {
-                    targetDiv: <?php echo wp_json_encode($logobotWrapperId); ?>,
-                    userJwt: <?php echo wp_json_encode($jwt); ?>,
-                    licenseKey: <?php echo wp_json_encode($license_key); ?>,
-                    bot: <?php echo wp_json_encode($bot_name); ?>,
-                    defaultOpen: true,
-                    name: '<?php echo esc_js(__('Visitatore', LOGOBOT_WP_DOMAIN)); ?>',
-                    themeConfig: {
-                        direction: 'ltr',
-                        paletteMode: 'light',
-                        colorPreset: '#000000',
-                        contrast: 'low',
-                        responsiveFontSizes: true
-                    }
-                };
-                Logobot.init(config);
-            }
-        </script>
+                    localStorage.setItem('logobot_threadkey', '');
+
+                    const config = {
+                        targetDiv: <?php echo wp_json_encode($logobotWrapperId); ?>,
+                        userJwt: <?php echo wp_json_encode($jwt); ?>,
+                        licenseKey: <?php echo wp_json_encode($license_key); ?>,
+                        bot: <?php echo wp_json_encode($bot_name); ?>,
+                        defaultOpen: true,
+                        name: '<?php echo esc_js(__('User', LOGOBOT_WP_DOMAIN)); ?>',
+                        initialPhrase: '<?php echo esc_js(__('Ciao sono Logobot, il tuo assistente virtuale. Come posso aiutarti oggi?', LOGOBOT_WP_DOMAIN)); ?>',
+                        themeConfig: {
+                            direction: 'ltr',
+                            paletteMode: 'light',
+                            colorPreset: '#000000',
+                            contrast: 'low',
+                            responsiveFontSizes: true
+                        }
+                    };
+                    Logobot.init(config);
+                }
+            </script>
+        <?php endif; ?>
     <?php
     $output = ob_get_clean();
     return $output;
 }
 
 function logobot_wp_register_block() {
-    register_block_type( 'logobot-wp/logobot-block', array(
+    register_block_type( LOGOBOT_WP_BLOCK_TYPE, array(
         'render_callback' => 'logobot_wp_render_block',
     ) );
 }
@@ -227,3 +230,14 @@ function logobot_wp_load_settings_page() {
         </div>
     <?php
 }
+
+function logobot_wp_enqueue_block_styles($block_content, $block) {
+    if ($block['blockName'] === LOGOBOT_WP_BLOCK_TYPE) {
+        wp_enqueue_style(
+            'logobot-block-style',
+            get_option( LOGOBOT_WP_CLIENT_URL) . '/style.css'
+        );
+    }
+    return $block_content;
+}
+add_filter('render_block', 'logobot_wp_enqueue_block_styles', 10, 2);
